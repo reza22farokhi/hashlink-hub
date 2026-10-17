@@ -1,0 +1,11 @@
+{
+  "network": "Polygon Amoy",
+  "chainId": 80002,
+  "tokenName": "HashLink Token",
+  "tokenSymbol": "HLT",
+  "totalSupply": "1000000000000000000000000000",
+  "tokenAddress": "0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2",
+  "deployer": "0xdF657ca6A55173079103EBaF6241F5a7d940E35A",
+  "deploymentTransaction": "0xccbfa8567fcba036a5131c150afd4ddecf882b4f019e82a38de9ed61a5b630f7",
+  "deployedAt": "2026-10-16T20:58:24.353Z"
+}

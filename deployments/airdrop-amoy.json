@@ -1,0 +1,17 @@
+{
+  "network": "Polygon Amoy",
+  "chainId": 80002,
+  "tokenAddress": "0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2",
+  "airdropAddress": "0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D",
+  "deployer": "0xdF657ca6A55173079103EBaF6241F5a7d940E35A",
+  "merkleRoot": "0x4d838f562710120ba590c815bc3962eb79c450dc8135cc502a2f0002fe870163",
+  "recipientCount": 2,
+  "totalAllocation": "350000000000000000000",
+  "deadline": 1794801209,
+  "deploymentTransaction": "0xe1143bfd5401f6e35d82f80f6568b127b0f266c6faa3ba3a85f1bfcb2f5e209c",
+  "deployedAt": "2026-10-17T03:57:33.954Z",
+  "funded": true,
+  "fundingTransaction": "0x5ae587b5ddf2f09facd35ef6931fe2ec02cd3175e3dd145a2a1f0996c7fa8f69",
+  "fundedAmount": "350000000000000000000",
+  "fundedAt": "2026-10-17T04:13:00.875Z"
+}

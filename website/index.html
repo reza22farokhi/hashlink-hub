@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d19">
+<meta name="description" content="HashLink Hub — Discover digital projects, connect with creators, and explore the HLT ecosystem.">
+<title>HashLink Hub | کشف کنید، همکاری کنید، رشد کنید</title>
+<style>
+:root{
+  color-scheme:dark;--bg:#080d19;--panel:#10192a;--line:#253650;
+  --text:#f2f6ff;--muted:#a5b3ca;--blue:#8bb8ff;
+  --green:#67dfb0;--purple:#b5a0ff
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 50% 0,#172a49 0,transparent 52%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.wrap{width:min(1120px,calc(100% - 32px));margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:78px;border-bottom:1px solid #ffffff12}
+.brand{display:flex;align-items:center;gap:12px;color:var(--text)}
+.logo{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#a6caff,#6d78f4);color:#081326;font-size:22px;font-weight:950;box-shadow:0 8px 32px #6d78f433}
+.brand strong{display:block;font-size:18px;letter-spacing:.3px}
+.brand small{display:block;color:var(--muted);font-size:12px}
+nav{display:flex;align-items:center;gap:22px}
+nav a{font-size:14px;color:var(--muted)}
+nav a:hover{color:var(--text)}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:11px 16px;background:#17243a;color:var(--text);font-weight:700}
+.btn:hover{text-decoration:none;filter:brightness(1.12)}
+.btn.primary{background:var(--blue);color:#071124;border-color:transparent}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.hero{padding:82px 0 50px;text-align:center}
+.tag{display:inline-flex;align-items:center;gap:8px;border:1px solid #44618b;background:#10203a;border-radius:99px;padding:8px 13px;color:#c2d9ff;font-size:13px}
+.tag .dot{width:7px;height:7px;border-radius:50%;background:#e5b65e}
+h1{font-size:clamp(38px,7vw,76px);line-height:1.12;letter-spacing:-1.8px;margin:24px auto 18px;max-width:900px}
+.accent{background:linear-gradient(90deg,#8bb8ff,#c5b6ff);color:transparent;background-clip:text;-webkit-background-clip:text}
+.intro{max-width:700px;margin:auto;color:var(--muted);font-size:17px;line-height:2}
+.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:28px}
+.micro{color:var(--muted);font-size:12px;line-height:1.9;margin-top:17px}
+.section{padding:36px 0}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}
+h2{font-size:clamp(23px,4vw,30px);margin:0 0 8px}
+h3{font-size:18px;margin:0 0 8px}
+.section-head p,.muted{color:var(--muted);line-height:1.9;margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.card{background:linear-gradient(145deg,#121e32,#0e1727);border:1px solid var(--line);border-radius:20px;padding:23px;min-width:0}
+.card p{color:var(--muted);font-size:14px;line-height:1.9}
+.card-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#8bb8ff16;border:1px solid #8bb8ff25;color:var(--blue);font-size:22px;margin-bottom:18px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:5px 9px;color:var(--muted);font-size:11px;margin-bottom:12px}
+.notice{margin-top:18px;padding:16px;border:1px solid #66552f;background:#211c12;border-radius:14px;color:#f1d6a0;line-height:1.9;font-size:13px}
+.token-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.token-number{font-size:clamp(21px,3vw,29px);font-weight:850;overflow-wrap:anywhere;margin:8px 0}
+.label{font-size:13px;color:var(--muted)}
+.sub{font-size:12px;color:var(--muted);line-height:1.9}
+.links{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.step-number{color:var(--blue);font-size:13px;font-weight:800;margin-bottom:10px}
+form{display:grid;gap:12px}
+input,textarea,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#0a1220;color:var(--text)}
+textarea{min-height:100px;resize:vertical}
+.status{margin-top:12px;padding:12px;border-radius:12px;background:#0a1220;border:1px solid var(--line);font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+footer{margin-top:45px;padding:28px 0 38px;border-top:1px solid #ffffff12;color:var(--muted);font-size:12px;line-height:2}
+.footer-row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+[hidden]{display:none!important}
+@media(max-width:760px){
+  nav{display:none}.hero{padding-top:55px}.grid,.token-grid,.steps{grid-template-columns:1fr}
+  .section-head{align-items:start;flex-direction:column}.actions{flex-direction:column}
+  .actions .btn{width:100%}.card{padding:20px}h1{letter-spacing:-.8px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="brand" href="#top" aria-label="HashLink Hub home">
+    <div class="logo">H</div>
+    <div><strong>HashLink Hub</strong><small>Discover · Connect · Build</small></div>
+  </a>
+  <nav>
+    <a href="#discover" data-fa="کشف پروژه‌ها" data-en="Discover">کشف پروژه‌ها</a>
+    <a href="#ecosystem" data-fa="اکوسیستم HLT" data-en="HLT Ecosystem">اکوسیستم HLT</a>
+    <a href="#participate" data-fa="مشارکت" data-en="Participate">مشارکت</a>
+  </nav>
+  <button class="btn" id="language" type="button">English</button>
+</header>
+
+<main id="top">
+<section class="hero">
+  <span class="tag"><span class="dot"></span><span data-fa="پیش‌نمایش محصول · شبکه آزمایشی" data-en="Product preview · Testnet">پیش‌نمایش محصول · شبکه آزمایشی</span></span>
+  <h1 data-fa="ایده‌های بزرگ از <span class='accent'>ارتباط‌های واقعی</span> شروع می‌شوند" data-en="Big ideas start with <span class='accent'>meaningful connections</span>">ایده‌های بزرگ از <span class="accent">ارتباط‌های واقعی</span> شروع می‌شوند</h1>
+  <p class="intro" data-fa="HashLink Hub در حال ساخت فضایی برای کشف پروژه‌های دیجیتال، ارتباط با سازندگان و مشارکت در ایده‌های ارزشمند است. ما با شفافیت شروع می‌کنیم و قدم‌به‌قدم پیش می‌رویم." data-en="HashLink Hub is building a place to discover digital projects, connect with creators, and contribute to meaningful ideas. We start with transparency and build step by step.">HashLink Hub در حال ساخت فضایی برای کشف پروژه‌های دیجیتال، ارتباط با سازندگان و مشارکت در ایده‌های ارزشمند است. ما با شفافیت شروع می‌کنیم و قدم‌به‌قدم پیش می‌رویم.</p>
+  <div class="actions">
+    <a class="btn primary" href="#discover" data-fa="کشف اکوسیستم" data-en="Explore the ecosystem">کشف اکوسیستم</a>
+    <a class="btn" href="#ecosystem" data-fa="آشنایی با HLT" data-en="About HLT">آشنایی با HLT</a>
+  </div>
+  <p class="micro" data-fa="بدون وعده سود · بدون ادعای استخراج · توسعه شفاف" data-en="No profit promises · No mining claims · Transparent development">بدون وعده سود · بدون ادعای استخراج · توسعه شفاف</p>
+</section>
+
+<section class="section" id="discover">
+  <div class="section-head">
+    <div>
+      <h2 data-fa="از کجا شروع کنیم؟" data-en="Where to start">از کجا شروع کنیم؟</h2>
+      <p data-fa="سه مسیر برای ورود به جامعه HashLink." data-en="Three ways to take part in the HashLink community.">سه مسیر برای ورود به جامعه HashLink.</p>
+    </div>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <div class="card-icon">⌕</div>
+      <span class="pill" data-fa="در حال توسعه" data-en="In development">در حال توسعه</span>
+      <h3 data-fa="کشف پروژه‌ها" data-en="Discover projects">کشف پروژه‌ها</h3>
+      <p data-fa="با پروژه‌های دیجیتال، محصولات نوآورانه و سازندگان آن‌ها آشنا شو. فهرست عمومی پروژه‌ها در مراحل بعدی اضافه می‌شود." data-en="Explore digital projects, new products, and their creators. A public project directory is planned for a future release.">با پروژه‌های دیجیتال، محصولات نوآورانه و سازندگان آن‌ها آشنا شو. فهرست عمومی پروژه‌ها در مراحل بعدی اضافه می‌شود.</p>
+    </article>
+    <article class="card">
+      <div class="card-icon">↗</div>
+      <span class="pill" data-fa="در حال برنامه‌ریزی" data-en="Planned">در حال برنامه‌ریزی</span>
+      <h3 data-fa="معرفی و همکاری" data-en="Referrals and collaboration">معرفی و همکاری</h3>
+      <p data-fa="به معرفی پروژه‌های معتبر و ارتباط میان سازندگان و مخاطبان کمک کن. سیستم دعوت هنوز به بک‌اند متصل نشده است." data-en="Help introduce credible projects and connect creators with audiences. Referral features are not yet connected to a backend.">به معرفی پروژه‌های معتبر و ارتباط میان سازندگان و مخاطبان کمک کن. سیستم دعوت هنوز به بک‌اند متصل نشده است.</p>
+    </article>
+    <article class="card">
+      <div class="card-icon">✧</div>
+      <span class="pill" data-fa="در حال برنامه‌ریزی" data-en="Planned">در حال برنامه‌ریزی</span>
+      <h3 data-fa="مأموریت‌های جامعه" data-en="Community missions">مأموریت‌های جامعه</h3>
+      <p data-fa="آزمایش محصول، ارائه بازخورد و مشارکت در فعالیت‌های مفید، پس از پیاده‌سازی سیستم تأیید فعالیت." data-en="Test products, share feedback, and contribute to useful activities once activity verification is implemented.">آزمایش محصول، ارائه بازخورد و مشارکت در فعالیت‌های مفید، پس از پیاده‌سازی سیستم تأیید فعالیت.</p>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="ecosystem">
+  <div class="section-head">
+    <div>
+      <h2 data-fa="آشنایی با HashLink Token" data-en="Meet HashLink Token">آشنایی با HashLink Token</h2>
+      <p data-fa="اطلاعات توکن را از وضعیت واقعی قرارداد جدا نمی‌کنیم." data-en="Token information is clearly separated from deployment and market status.">اطلاعات توکن را از وضعیت واقعی قرارداد جدا نمی‌کنیم.</p>
+    </div>
+  </div>
+  <div class="token-grid">
+    <article class="card">
+      <div class="label" data-fa="نام توکن" data-en="Token name">نام توکن</div>
+      <div class="token-number">HashLink Token</div>
+      <div class="sub">Ticker: HLT</div>
+    </article>
+    <article class="card">
+      <div class="label" data-fa="عرضه کل ثابت" data-en="Fixed total supply">عرضه کل ثابت</div>
+      <div class="token-number">1,000,000,000</div>
+      <div class="sub">HLT · <span data-fa="بدون قابلیت ضرب مجدد در قرارداد فعلی" data-en="No additional mint function in the current contract">بدون قابلیت ضرب مجدد در قرارداد فعلی</span></div>
+    </article>
+    <article class="card">
+      <div class="label" data-fa="وضعیت شبکه" data-en="Network status">وضعیت شبکه</div>
+      <div class="token-number" style="color:var(--green)" data-fa="Polygon Amoy" data-en="Polygon Amoy">Polygon Amoy</div>
+      <div class="sub" data-fa="فقط شبکه آزمایشی؛ شبکه اصلی مستقر نشده است." data-en="Testnet only; mainnet has not been deployed.">فقط شبکه آزمایشی؛ شبکه اصلی مستقر نشده است.</div>
+    </article>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 data-fa="قراردادها و شفافیت" data-en="Contracts and transparency">قراردادها و شفافیت</h3>
+    <p data-fa="آدرس‌های زیر مربوط به قراردادهای آزمایشی Polygon Amoy هستند. وجود قرارداد آزمایشی به معنی ارزش بازار، معامله عمومی یا فعال بودن ایردراپ شبکه اصلی نیست." data-en="The links below point to Polygon Amoy testnet contracts. Testnet deployment does not imply market value, public trading, or an active mainnet airdrop.">آدرس‌های زیر مربوط به قراردادهای آزمایشی Polygon Amoy هستند. وجود قرارداد آزمایشی به معنی ارزش بازار، معامله عمومی یا فعال بودن ایردراپ شبکه اصلی نیست.</p>
+    <div class="links">
+      <a href="https://amoy.polygonscan.com/address/0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2" target="_blank" rel="noopener noreferrer" data-fa="مشاهده قرارداد توکن" data-en="View token contract">مشاهده قرارداد توکن</a>
+      <a href="https://amoy.polygonscan.com/address/0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D" target="_blank" rel="noopener noreferrer" data-fa="مشاهده قرارداد ایردراپ آزمایشی" data-en="View testnet airdrop contract">مشاهده قرارداد ایردراپ آزمایشی</a>
+    </div>
+    <div class="notice" data-fa="ایردراپ شبکه اصلی فعال نیست. برای دریافت توکن هرگز عبارت بازیابی یا کلید خصوصی خود را به کسی ندهید و به وعده سود تضمینی اعتماد نکنید." data-en="The mainnet airdrop is inactive. Never share your recovery phrase or private key, and do not trust guaranteed-profit promises.">ایردراپ شبکه اصلی فعال نیست. برای دریافت توکن هرگز عبارت بازیابی یا کلید خصوصی خود را به کسی ندهید و به وعده سود تضمینی اعتماد نکنید.</div>
+  </div>
+</section>
+
+<section class="section" id="participate">
+  <div class="section-head">
+    <div>
+      <h2 data-fa="چطور می‌توانی مشارکت کنی؟" data-en="How can you participate?">چطور می‌توانی مشارکت کنی؟</h2>
+      <p data-fa="مسیر ساخت جامعه با مشارکت واقعی شروع می‌شود." data-en="A strong community starts with real contributions.">مسیر ساخت جامعه با مشارکت واقعی شروع می‌شود.</p>
+    </div>
+  </div>
+  <div class="steps">
+    <article class="card"><div class="step-number">01 / LEARN</div><h3 data-fa="با پروژه آشنا شو" data-en="Learn about the project">با پروژه آشنا شو</h3><p data-fa="وضعیت توسعه، قراردادها و محدودیت‌های فعلی را بررسی کن." data-en="Review the development status, contracts, and current limitations.">وضعیت توسعه، قراردادها و محدودیت‌های فعلی را بررسی کن.</p></article>
+    <article class="card"><div class="step-number">02 / CONTRIBUTE</div><h3 data-fa="بازخورد بده" data-en="Share feedback">بازخورد بده</h3><p data-fa="پیشنهادهای روشن و گزارش خطا به ساخت محصول بهتر کمک می‌کنند." data-en="Clear suggestions and bug reports help improve the product.">پیشنهادهای روشن و گزارش خطا به ساخت محصول بهتر کمک می‌کنند.</p></article>
+    <article class="card"><div class="step-number">03 / BUILD</div><h3 data-fa="در رشد جامعه سهم داشته باش" data-en="Help grow the community">در رشد جامعه سهم داشته باش</h3><p data-fa="اطلاعات دقیق را به اشتراک بگذار؛ از آمار و وعده‌های تأییدنشده پرهیز کن." data-en="Share accurate information and avoid unverified claims or statistics.">اطلاعات دقیق را به اشتراک بگذار؛ از آمار و وعده‌های تأییدنشده پرهیز کن.</p></article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="card">
+    <h2 data-fa="پیشنهاد یا معرفی پروژه" data-en="Suggest a project">پیشنهاد یا معرفی پروژه</h2>
+    <p class="muted" data-fa="این فرم فعلاً نمایشی است و اطلاعات را به سرور ارسال نمی‌کند. اتصال امن به بک‌اند در مرحله بعد توسعه داده می‌شود." data-en="This form is currently a demo and does not send data to a server. Secure backend integration is planned for a later stage.">این فرم فعلاً نمایشی است و اطلاعات را به سرور ارسال نمی‌کند. اتصال امن به بک‌اند در مرحله بعد توسعه داده می‌شود.</p>
+    <form id="suggestion">
+      <input name="project" maxlength="100" required placeholder="نام پروژه / Project name" aria-label="Project name">
+      <input name="url" type="url" maxlength="300" placeholder="لینک رسمی (اختیاری) / Official URL (optional)" aria-label="Official URL">
+      <textarea name="description" maxlength="1000" required placeholder="توضیح کوتاه / Short description" aria-label="Short description"></textarea>
+      <button class="btn primary" type="submit" data-fa="بررسی فرم نمایشی" data-en="Preview submission">بررسی فرم نمایشی</button>
+    </form>
+    <div class="status" id="form-status" role="status" hidden></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="card">
+    <h2 data-fa="اتصال اختیاری کیف پول آزمایشی" data-en="Optional testnet wallet connection">اتصال اختیاری کیف پول آزمایشی</h2>
+    <p class="muted" data-fa="اتصال کیف پول فقط برای نمایش آدرس و بررسی شبکه است؛ این سایت تراکنش ارسال نمی‌کند و ایردراپ اصلی فعال نیست." data-en="Wallet connection only displays your address and checks the network. This site does not send transactions, and the mainnet airdrop is inactive.">اتصال کیف پول فقط برای نمایش آدرس و بررسی شبکه است؛ این سایت تراکنش ارسال نمی‌کند و ایردراپ اصلی فعال نیست.</p>
+    <div class="actions" style="justify-content:flex-start">
+      <button id="connect" class="btn primary" type="button" data-fa="اتصال کیف پول" data-en="Connect wallet">اتصال کیف پول</button>
+      <button id="switch" class="btn" type="button" disabled data-fa="انتخاب شبکه Amoy" data-en="Switch to Amoy">انتخاب شبکه Amoy</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">کیف پول متصل نیست.</div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="footer-row">
+    <div><strong>HashLink Hub · HLT</strong><br><span data-fa="ساخته‌شده با تمرکز بر شفافیت و مشارکت واقعی." data-en="Built around transparency and meaningful participation.">ساخته‌شده با تمرکز بر شفافیت و مشارکت واقعی.</span></div>
+    <div data-fa="پیش‌نمایش توسعه · Polygon Amoy · شبکه اصلی مستقر نشده" data-en="Development preview · Polygon Amoy · Mainnet not deployed">پیش‌نمایش توسعه · Polygon Amoy · شبکه اصلی مستقر نشده</div>
+  </div>
+</footer>
+</div>
+<script type="module" src="/main.js"></script>
+</body>
+</html>

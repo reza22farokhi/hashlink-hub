@@ -1,0 +1,49 @@
+HASHLINK TOKEN (HLT) — DEPLOYMENT STATUS
+Last updated: 2026-10-17
+
+PROJECT
+Name: HashLink Token
+Symbol: HLT
+Network: Polygon
+Token supply: 1,000,000,000 HLT
+Minting: Fixed supply; minted in constructor
+Mainnet deployment: NOT DEPLOYED
+Mainnet trading or market value: NOT VERIFIED
+
+POLYGON AMOY TESTNET — TOKEN
+Status: DEPLOYED
+Chain ID: 80002
+Token address: 0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2
+Transaction:
+0xccbfa8567fcba036a5131c150afd4ddecf882b4f019e82a38de9ed61a5b630f7
+Explorer:
+https://amoy.polygonscan.com/address/0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2
+
+POLYGON AMOY TESTNET — AIRDROP
+Status: DEPLOYED FOR TESTING
+Chain ID: 80002
+Airdrop address: 0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D
+Transaction:
+0xe1143bfd5401f6e35d82f80f6568b127b0f266c6faa3ba3a85f1bfcb2f5e209c
+Explorer:
+https://amoy.polygonscan.com/address/0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D
+
+Merkle root:
+0x4d838f562710120ba590c815bc3962eb79c450dc8135cc502a2f0002fe870163
+Recipients at deployment: 2
+Total allocation at deployment: 350 HLT
+Claim deadline: 2026-11-16 03:53:29 UTC
+
+A previous local check recorded the first 100 HLT claim as successful
+and the remaining 250 HLT as unclaimed. Check the live contract before
+relying on the current claim status.
+
+TESTS
+Source checks: 3 passed
+Local runtime tests: passed
+Runtime tests use a local test chain; their addresses are not Polygon deployments.
+
+SAFETY
+Never publish private keys, recovery phrases, or the .env file.
+Do not deploy to Polygon mainnet without explicit confirmation.
+Testnet tokens do not establish real-world market value.

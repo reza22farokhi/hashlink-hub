@@ -1,0 +1,24 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and generated build files
+node_modules/
+artifacts/
+cache/
+coverage/
+*.bin
+*.abi
+.hlt-estimate/
+
+# Private airdrop data
+airdrop-recipients.json
+airdrop-proofs.json
+
+# Local backups
+*.backup
+*.backup-*
+*.bak
