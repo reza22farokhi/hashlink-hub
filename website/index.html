@@ -194,12 +194,20 @@ footer{margin-top:45px;padding:28px 0 38px;border-top:1px solid #ffffff12;color:
 <section class="section">
   <div class="card">
     <h2 data-fa="اتصال اختیاری کیف پول آزمایشی" data-en="Optional testnet wallet connection">اتصال اختیاری کیف پول آزمایشی</h2>
-    <p class="muted" data-fa="اتصال کیف پول فقط برای نمایش آدرس و بررسی شبکه است؛ این سایت تراکنش ارسال نمی‌کند و ایردراپ اصلی فعال نیست." data-en="Wallet connection only displays your address and checks the network. This site does not send transactions, and the mainnet airdrop is inactive.">اتصال کیف پول فقط برای نمایش آدرس و بررسی شبکه است؛ این سایت تراکنش ارسال نمی‌کند و ایردراپ اصلی فعال نیست.</p>
+    <p class="muted" data-fa="این بخش فقط برای ایردراپ آزمایشی Polygon Amoy است. Claim یک تراکنش آزمایشی می‌خواهد و فقط پس از تأیید شما در MetaMask ارسال می‌شود؛ ایردراپ شبکه اصلی فعال نیست." data-en="This section is for the Polygon Amoy testnet airdrop only. Claim requires a testnet transaction and is sent only after your confirmation in MetaMask; mainnet airdrop is not active.">این بخش فقط برای ایردراپ آزمایشی Polygon Amoy است. Claim یک تراکنش آزمایشی می‌خواهد و فقط پس از تأیید شما در MetaMask ارسال می‌شود؛ ایردراپ شبکه اصلی فعال نیست.</p>
     <div class="actions" style="justify-content:flex-start">
       <button id="connect" class="btn primary" type="button" data-fa="اتصال کیف پول" data-en="Connect wallet">اتصال کیف پول</button>
       <button id="switch" class="btn" type="button" disabled data-fa="انتخاب شبکه Amoy" data-en="Switch to Amoy">انتخاب شبکه Amoy</button>
     </div>
     <div id="status" class="status" role="status" aria-live="polite">کیف پول متصل نیست.</div>
+    <button id="claim" class="btn primary" type="button" disabled data-fa="دریافت HLT آزمایشی (Amoy)" data-en="Claim testnet HLT (Amoy)">دریافت HLT آزمایشی (Amoy)</button>
+    <p class="muted" data-fa="قبل از تأیید تراکنش، شبکه و جزئیات را در MetaMask بررسی کن. برای کارمزد به POL آزمایشی نیاز داری." data-en="Check the network and transaction details in MetaMask before confirming. Test POL is needed for gas.">قبل از تأیید تراکنش، شبکه و جزئیات را در MetaMask بررسی کن. برای کارمزد به POL آزمایشی نیاز داری.</p>
+    <div id="hlt-read-only-panel" class="status" style="margin-top:12px">
+      <p><strong data-fa="موجودی کیف پول:" data-en="Wallet balance:">موجودی کیف پول:</strong> <span id="hlt-wallet-balance">—</span></p>
+      <p><strong data-fa="موجودی قرارداد ایردراپ:" data-en="Airdrop contract balance:">موجودی قرارداد ایردراپ:</strong> <span id="hlt-airdrop-balance">—</span></p>
+      <p><strong data-fa="وضعیت ایردراپ:" data-en="Airdrop status:">وضعیت ایردراپ:</strong> <span id="hlt-claim-status">—</span></p>
+    </div>
+
   </div>
 </section>
 </main>

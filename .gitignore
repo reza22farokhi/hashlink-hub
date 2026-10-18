@@ -17,6 +17,7 @@ coverage/
 # Private airdrop data
 airdrop-recipients.json
 airdrop-proofs.json
+!website/airdrop-proofs.json
 
 # Local backups
 *.backup

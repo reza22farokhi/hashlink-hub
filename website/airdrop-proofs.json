@@ -1,0 +1,19 @@
+{
+  "merkleRoot": "0x4d838f562710120ba590c815bc3962eb79c450dc8135cc502a2f0002fe870163",
+  "recipients": [
+    {
+      "address": "0xdF657ca6A55173079103EBaF6241F5a7d940E35A",
+      "amount": "100000000000000000000",
+      "proof": [
+        "0xd54ce2cbbcd5b710e48bf45d5059f7c985c4236db4f0b32e4651069bb63a9e74"
+      ]
+    },
+    {
+      "address": "0x495F9F90A0e8980C5b1f004963d806267395273c",
+      "amount": "250000000000000000000",
+      "proof": [
+        "0xc230786561f382817ef158f22117303687537f9f66761f3f1de5d7fa5bd90c81"
+      ]
+    }
+  ]
+}

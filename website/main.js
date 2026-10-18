@@ -3,8 +3,70 @@ const connectButton = $("connect");
 const switchButton = $("switch");
 const statusBox = $("status");
 const languageButton = $("language");
+const claimButton = $("claim");
 
 const AMOY_CHAIN_ID = "0x13882";
+const HLT_READ_ONLY_PANEL_V1 = true;
+const HLT_TOKEN_ADDRESS = "0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2";
+const HLT_AIRDROP_ADDRESS = "0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D";
+const HLT_MERKLE_ROOT = "0x4d838f562710120ba590c815bc3962eb79c450dc8135cc502a2f0002fe870163";
+const HLT_CLAIM_DEADLINE = 1794801209;
+const HLT_BALANCE_OF_SELECTOR = "0x70a08231";
+const HLT_CLAIMED_SELECTOR = "0x73b2e80e";
+const HLT_CLAIM_SELECTOR = "0x2f52ebb7";
+
+function clearChainData(message = "—") {
+  const ids = ["hlt-wallet-balance", "hlt-airdrop-balance", "hlt-claim-status"];
+  for (const id of ids) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = message;
+  }
+}
+
+function formatHLT(raw) {
+  const value = BigInt(raw);
+  const base = 10n ** 18n;
+  const whole = (value / base).toLocaleString("en-US");
+  const fraction = (value % base).toString().padStart(18, "0")
+    .slice(0, 4).replace(/0+$/, "");
+  return whole + (fraction ? "." + fraction : "") + " HLT";
+}
+
+async function readContract(address, data) {
+  return window.ethereum.request({
+    method: "eth_call",
+    params: [{ to: address, data }, "latest"]
+  });
+}
+
+async function updateChainData(account, requestId) {
+  clearChainData("در حال خواندن…");
+  try {
+    const paddedAccount = account.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+
+    const [walletRaw, airdropRaw, claimedRaw] = await Promise.all([
+      readContract(HLT_TOKEN_ADDRESS, HLT_BALANCE_OF_SELECTOR + paddedAccount),
+      readContract(HLT_TOKEN_ADDRESS,
+        HLT_BALANCE_OF_SELECTOR + HLT_AIRDROP_ADDRESS.toLowerCase().replace(/^0x/, "").padStart(64, "0")),
+      readContract(HLT_AIRDROP_ADDRESS, HLT_CLAIMED_SELECTOR + paddedAccount)
+    ]);
+
+    if (requestId !== statusRequestId || account !== currentAccount) return;
+
+    document.getElementById("hlt-wallet-balance").textContent = formatHLT(walletRaw);
+    document.getElementById("hlt-airdrop-balance").textContent = formatHLT(airdropRaw);
+
+    const claimed = BigInt(claimedRaw) !== 0n;
+    document.getElementById("hlt-claim-status").textContent = claimed
+      ? tr("این کیف پول قبلاً ایردراپ گرفته است.", "This wallet has already claimed.")
+      : tr("این کیف پول هنوز ایردراپ نگرفته است.", "This wallet has not claimed yet.");
+  } catch (error) {
+    if (requestId !== statusRequestId) return;
+    clearChainData(tr("خواندن اطلاعات ناموفق بود؛ شبکه و قراردادها را بررسی کن.", "Could not read data; check the network and contracts."));
+    console.error("HLT read-only query failed:", error);
+  }
+}
+
 const AMOY_NETWORK = {
   chainId: AMOY_CHAIN_ID,
   chainName: "Polygon Amoy Testnet",
@@ -37,6 +99,7 @@ async function updateWalletUI() {
     : tr("اتصال کیف پول", "Connect wallet");
 
   if (!window.ethereum) {
+    claimButton.disabled = true;
     switchButton.disabled = true;
     setStatus(tr(
       "کیف پول سازگار پیدا نشد. اتصال اختیاری است.",
@@ -46,6 +109,8 @@ async function updateWalletUI() {
   }
 
   if (!currentAccount) {
+    claimButton.disabled = true;
+    clearChainData();
     switchButton.disabled = true;
     setStatus(tr("کیف پول متصل نیست.", "Wallet not connected."));
     return;
@@ -59,6 +124,8 @@ async function updateWalletUI() {
     if (requestId !== statusRequestId) return;
 
     switchButton.disabled = chainId === AMOY_CHAIN_ID;
+    claimButton.disabled = chainId !== AMOY_CHAIN_ID;
+    if (chainId !== AMOY_CHAIN_ID) clearChainData();
     setStatus(
       tr("کیف پول: ", "Wallet: ") +
       shortAddress(currentAccount) +
@@ -66,7 +133,11 @@ async function updateWalletUI() {
         ? tr(" · شبکه آزمایشی Amoy", " · Amoy testnet")
         : tr(" · شبکه فعلی Amoy نیست", " · Not on Amoy"))
     );
+    if (chainId === AMOY_CHAIN_ID && currentAccount) {
+      await updateChainData(currentAccount, requestId);
+    }
   } catch {
+    clearChainData();
     if (requestId !== statusRequestId) return;
     switchButton.disabled = true;
     setStatus(tr(
@@ -94,6 +165,152 @@ function setLanguage(language) {
 languageButton.addEventListener("click", () => {
   setLanguage(currentLanguage === "fa" ? "en" : "fa");
 });
+
+
+function encodeClaimCall(amount, proof) {
+  const amountWord = BigInt(amount).toString(16).padStart(64, "0");
+  const offsetWord = (64n).toString(16).padStart(64, "0");
+  const lengthWord = BigInt(proof.length).toString(16).padStart(64, "0");
+  const proofWords = proof.map(item => {
+    if (typeof item !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(item)) {
+      throw new Error("ساختار proof نامعتبر است.");
+    }
+    return item.slice(2).toLowerCase();
+  }).join("");
+  return HLT_CLAIM_SELECTOR + amountWord + offsetWord + lengthWord + proofWords;
+}
+
+async function claimAirdrop() {
+  if (!window.ethereum || !currentAccount) {
+    setStatus(tr("ابتدا کیف پول را متصل کن.", "Connect a wallet first."));
+    return;
+  }
+
+  claimButton.disabled = true;
+  let submittedTxHash = null;
+  try {
+    const [chainId, accounts] = await Promise.all([
+      window.ethereum.request({ method: "eth_chainId" }),
+      window.ethereum.request({ method: "eth_accounts" })
+    ]);
+
+    if (chainId !== AMOY_CHAIN_ID) {
+      throw new Error(tr("شبکه باید Polygon Amoy باشد.", "Switch to Polygon Amoy first."));
+    }
+
+    const account = accounts[0];
+    if (!account || account.toLowerCase() !== currentAccount.toLowerCase()) {
+      throw new Error(tr("حساب فعال کیف پول تغییر کرده است؛ دوباره متصل شو.", "The active wallet account changed. Reconnect."));
+    }
+
+    if (Math.floor(Date.now() / 1000) > HLT_CLAIM_DEADLINE) {
+      throw new Error(tr("مهلت ایردراپ پایان یافته است.", "The airdrop claim deadline has passed."));
+    }
+
+    const response = await fetch("./airdrop-proofs.json", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(tr("فایل اثبات ایردراپ در سایت پیدا نشد.", "Could not load the airdrop proof file."));
+    }
+
+    const data = await response.json();
+    if (!data || !data.merkleRoot ||
+        data.merkleRoot.toLowerCase() !== HLT_MERKLE_ROOT.toLowerCase() ||
+        !Array.isArray(data.recipients)) {
+      throw new Error(tr("فایل اثبات با قرارداد مستقرشده مطابقت ندارد.", "The proof file does not match the deployed contract."));
+    }
+
+    const recipient = data.recipients.find(
+      item => item.address && item.address.toLowerCase() === account.toLowerCase()
+    );
+    if (!recipient) {
+      throw new Error(tr("برای این کیف پول سهمیه‌ای در فهرست وجود ندارد.", "This wallet is not in the airdrop list."));
+    }
+
+    const amount = BigInt(recipient.amount);
+    if (amount <= 0n || !Array.isArray(recipient.proof)) {
+      throw new Error(tr("مبلغ یا اثبات نامعتبر است.", "Invalid allocation or proof."));
+    }
+
+    const paddedAccount = account.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+    const [claimedRaw, airdropBalanceRaw] = await Promise.all([
+      readContract(HLT_AIRDROP_ADDRESS, HLT_CLAIMED_SELECTOR + paddedAccount),
+      readContract(HLT_TOKEN_ADDRESS,
+        HLT_BALANCE_OF_SELECTOR +
+        HLT_AIRDROP_ADDRESS.toLowerCase().replace(/^0x/, "").padStart(64, "0"))
+    ]);
+
+    if (BigInt(claimedRaw) !== 0n) {
+      throw new Error(tr("این کیف پول قبلاً Claim کرده است.", "This wallet has already claimed."));
+    }
+    if (BigInt(airdropBalanceRaw) < amount) {
+      throw new Error(tr("موجودی قرارداد برای این Claim کافی نیست.", "The airdrop contract has insufficient HLT."));
+    }
+
+    const txData = encodeClaimCall(recipient.amount, recipient.proof);
+
+    setStatus(tr(
+      "در حال شبیه‌سازی تراکنش؛ هنوز چیزی ارسال نشده است…",
+      "Simulating transaction; nothing has been sent yet…"
+    ));
+
+    await window.ethereum.request({
+      method: "eth_call",
+      params: [{ from: account, to: HLT_AIRDROP_ADDRESS, data: txData }, "latest"]
+    });
+
+    if ((await window.ethereum.request({ method: "eth_chainId" })) !== AMOY_CHAIN_ID) {
+      throw new Error(tr("شبکه تغییر کرده است؛ دوباره تلاش کن.", "The network changed. Please try again."));
+    }
+
+    setStatus(tr(
+      "شبیه‌سازی موفق بود. MetaMask را بررسی و فقط در صورت تأیید خودت تراکنش را تأیید کن.",
+      "Simulation succeeded. Review MetaMask and confirm only if you approve the transaction."
+    ));
+
+    const txHash = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [{
+        from: account,
+        to: HLT_AIRDROP_ADDRESS,
+        data: txData
+      }]
+    });
+    submittedTxHash = txHash;
+
+    setStatus(tr(
+      "درخواست تراکنش به کیف پول ارسال شد. هش تراکنش: ",
+      "Transaction submitted. Transaction hash: "
+    ) + txHash);
+  } catch (error) {
+    const message = error?.message || "Unknown error";
+    setStatus(tr("Claim انجام نشد: ", "Claim failed: ") + message);
+    console.error("HLT claim failed:", error);
+  } finally {
+    try {
+      await updateWalletUI();
+    } catch (refreshError) {
+      console.error("Wallet UI refresh failed:", refreshError);
+    }
+
+    if (submittedTxHash) {
+      setStatus(tr(
+        "تراکنش ارسال شده است؛ تأیید نهایی را در اکسپلورر بررسی کن. هش: ",
+        "Transaction submitted; check the explorer for confirmation. Hash: "
+      ) + submittedTxHash);
+    }
+
+    let chainId = null;
+    try {
+      if (window.ethereum) {
+        chainId = await window.ethereum.request({ method: "eth_chainId" });
+      }
+    } catch (chainError) {
+      console.error("Could not read wallet chain:", chainError);
+    }
+
+    claimButton.disabled = !currentAccount || chainId !== AMOY_CHAIN_ID;
+  }
+}
 
 async function connectWallet() {
   if (!window.ethereum) {
@@ -159,6 +376,7 @@ async function switchToAmoy() {
   }
 }
 
+claimButton.addEventListener("click", claimAirdrop);
 connectButton.addEventListener("click", connectWallet);
 switchButton.addEventListener("click", switchToAmoy);
 

@@ -1,0 +1,46 @@
+name: Deploy HashLink Airdrop API
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "workers/airdrop-api/**"
+      - ".github/workflows/deploy-airdrop-api.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hashlink-airdrop-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: workers/airdrop-api
+        run: npm install --no-audit --no-fund
+
+      - name: Validate API source
+        working-directory: workers/airdrop-api
+        run: npm run check
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/airdrop-api
+          command: deploy
