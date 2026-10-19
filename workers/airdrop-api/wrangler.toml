@@ -5,3 +5,11 @@ compatibility_date = "2026-10-18"
 [[kv_namespaces]]
 binding = "AIRDROP_KV"
 id = "65a43ddb4f9c48e98495d2fe4cae0427"
+
+[[durable_objects.bindings]]
+name = "AIRDROP_CHALLENGES"
+class_name = "ChallengeStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChallengeStore"]

@@ -85,6 +85,14 @@ async function challenge(request, env) {
     return response({ error: "method_not_allowed" }, 405);
   }
 
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const rate = await doCall(env, `rate:${ip}`, {
+    action: "rate", limit: 10, windowMs: 60000
+  });
+  if (!rate.allowed) {
+    return response({ error: "rate_limited" }, 429);
+  }
+
   let body;
   try {
     body = await readBody(request);
@@ -108,11 +116,13 @@ async function challenge(request, env) {
     "Purpose: prove wallet ownership; no transaction is authorized."
   ].join("\n");
 
-  await env.AIRDROP_KV.put(
-    `challenge:${nonce}`,
-    JSON.stringify({ address, message }),
-    { expirationTtl: TTL }
-  );
+  const stored = await doCall(env, `challenge:${nonce}`, {
+    action: "put",
+    value: { address, message }
+  });
+  if (!stored.ok) {
+    return response({ error: "challenge_store_failed" }, 503);
+  }
 
   return response({ nonce, message, expiresIn: TTL });
 }
@@ -120,6 +130,14 @@ async function challenge(request, env) {
 async function proof(request, env) {
   if (request.method !== "POST") {
     return response({ error: "method_not_allowed" }, 405);
+  }
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const rate = await doCall(env, `rate:${ip}`, {
+    action: "rate", limit: 20, windowMs: 60000
+  });
+  if (!rate.allowed) {
+    return response({ error: "rate_limited" }, 429);
   }
 
   let body;
@@ -141,8 +159,10 @@ async function proof(request, env) {
     return response({ error: "invalid_nonce_or_signature" }, 400);
   }
 
-  const key = `challenge:${nonce}`;
-  const saved = await env.AIRDROP_KV.get(key, "json");
+  const challengeResult = await doCall(
+    env, `challenge:${nonce}`, { action: "get" }
+  );
+  const saved = challengeResult.value;
 
   if (!saved || saved.address !== address.toLowerCase()) {
     return response({ error: "challenge_expired_or_mismatched" }, 401);
@@ -185,7 +205,13 @@ async function proof(request, env) {
     return response({ error: "invalid_allocation_or_merkle_proof" }, 503);
   }
 
-  await env.AIRDROP_KV.delete(key);
+  const consumed = await doCall(
+    env, `challenge:${nonce}`,
+    { action: "consume", address: address.toLowerCase() }
+  );
+  if (!consumed.ok) {
+    return response({ error: "challenge_expired_or_already_used" }, 401);
+  }
 
   return response({
     network: "polygon-amoy",
@@ -197,6 +223,116 @@ async function proof(request, env) {
     amount: recipient.amount,
     proof: recipient.proof
   });
+}
+
+
+async function doCall(env, key, payload) {
+  const id = env.AIRDROP_CHALLENGES.idFromName(key);
+  const stub = env.AIRDROP_CHALLENGES.get(id);
+  const result = await stub.fetch("https://internal.invalid/", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!result.ok) throw new Error("challenge_store_unavailable");
+  return result.json();
+}
+
+export class ChallengeStore {
+  constructor(ctx) {
+    this.ctx = ctx;
+  }
+
+  async fetch(request) {
+    if (request.method !== "POST") {
+      return Response.json({ error: "method_not_allowed" }, { status: 405 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "invalid_json" }, { status: 400 });
+    }
+
+    if (body.action === "rate") {
+      const limit = Number(body.limit);
+      const windowMs = Number(body.windowMs);
+
+      if (!Number.isInteger(limit) || limit < 1 ||
+          !Number.isInteger(windowMs) || windowMs < 1000) {
+        return Response.json({ error: "invalid_rate_config" }, { status: 400 });
+      }
+
+      const result = await this.ctx.storage.transaction(async txn => {
+        const now = Date.now();
+        const current = await txn.get("rate");
+
+        if (!current || now - current.startedAt >= windowMs) {
+          await txn.put("rate", { startedAt: now, count: 1 });
+          return { allowed: true };
+        }
+
+        if (current.count >= limit) return { allowed: false };
+
+        await txn.put("rate", {
+          startedAt: current.startedAt,
+          count: current.count + 1
+        });
+        return { allowed: true };
+      });
+
+      return Response.json(result);
+    }
+
+    if (body.action === "put") {
+      if (!body.value ||
+          typeof body.value.address !== "string" ||
+          typeof body.value.message !== "string") {
+        return Response.json({ error: "invalid_challenge" }, { status: 400 });
+      }
+
+      await this.ctx.storage.put("challenge", {
+        address: body.value.address,
+        message: body.value.message,
+        createdAt: Date.now()
+      });
+      return Response.json({ ok: true });
+    }
+
+    if (body.action === "get") {
+      const saved = await this.ctx.storage.get("challenge");
+
+      if (!saved || Date.now() - saved.createdAt > 300000) {
+        return Response.json({ value: null });
+      }
+
+      return Response.json({
+        value: { address: saved.address, message: saved.message }
+      });
+    }
+
+    if (body.action === "consume") {
+      const result = await this.ctx.storage.transaction(async txn => {
+        const saved = await txn.get("challenge");
+
+        if (!saved) return { ok: false };
+
+        if (Date.now() - saved.createdAt > 300000 ||
+            saved.address !== body.address) {
+          await txn.delete("challenge");
+          return { ok: false };
+        }
+
+        await txn.delete("challenge");
+        return { ok: true };
+      });
+
+      return Response.json(result);
+    }
+
+    return Response.json({ error: "unknown_action" }, { status: 400 });
+  }
 }
 
 export default {
