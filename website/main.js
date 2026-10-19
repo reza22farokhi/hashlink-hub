@@ -10,6 +10,7 @@ const HLT_READ_ONLY_PANEL_V1 = true;
 const HLT_TOKEN_ADDRESS = "0x473C3aEaa61266b03eC5F2Fea0dE683b83714EB2";
 const HLT_AIRDROP_ADDRESS = "0x3c2D98A0d1e6AcaA5Cc5B7A2066cdfD3A5337f0D";
 const HLT_MERKLE_ROOT = "0x4d838f562710120ba590c815bc3962eb79c450dc8135cc502a2f0002fe870163";
+const HLT_AIRDROP_API_URL = "https://hashlink-airdrop-api.reza22farokhi.workers.dev";
 const HLT_CLAIM_DEADLINE = 1794801209;
 const HLT_BALANCE_OF_SELECTOR = "0x70a08231";
 const HLT_CLAIMED_SELECTOR = "0x73b2e80e";
@@ -207,28 +208,95 @@ async function claimAirdrop() {
       throw new Error(tr("مهلت ایردراپ پایان یافته است.", "The airdrop claim deadline has passed."));
     }
 
-    const response = await fetch("./airdrop-proofs.json", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(tr("فایل اثبات ایردراپ در سایت پیدا نشد.", "Could not load the airdrop proof file."));
+    setStatus(tr(
+      "در حال دریافت چالش امنیتی از API…",
+      "Requesting a security challenge from the API…"
+    ));
+
+    const challengeResponse = await fetch(`${HLT_AIRDROP_API_URL}/challenge`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: account }),
+      cache: "no-store"
+    });
+
+    let challenge;
+    try {
+      challenge = await challengeResponse.json();
+    } catch {
+      throw new Error("The API returned an invalid challenge response.");
+    }
+    if (!challengeResponse.ok || !challenge ||
+        typeof challenge.nonce !== "string" ||
+        typeof challenge.message !== "string" ||
+        !challenge.message) {
+      throw new Error(challenge?.error || "Could not obtain a wallet challenge.");
     }
 
-    const data = await response.json();
-    if (!data || !data.merkleRoot ||
-        data.merkleRoot.toLowerCase() !== HLT_MERKLE_ROOT.toLowerCase() ||
-        !Array.isArray(data.recipients)) {
-      throw new Error(tr("فایل اثبات با قرارداد مستقرشده مطابقت ندارد.", "The proof file does not match the deployed contract."));
+    setStatus(tr(
+      "درخواست امضای پیام مالکیت در کیف پول؛ این امضا تراکنش نیست و توکن جابه‌جا نمی‌کند.",
+      "Sign the wallet-ownership message; this is not a transaction and does not move tokens."
+    ));
+
+    const signature = await window.ethereum.request({
+      method: "personal_sign",
+      params: [challenge.message, account]
+    });
+
+    const proofResponse = await fetch(`${HLT_AIRDROP_API_URL}/proof`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        address: account,
+        nonce: challenge.nonce,
+        signature
+      }),
+      cache: "no-store"
+    });
+
+    let proofData;
+    try {
+      proofData = await proofResponse.json();
+    } catch {
+      throw new Error("The API returned an invalid proof response.");
     }
 
-    const recipient = data.recipients.find(
-      item => item.address && item.address.toLowerCase() === account.toLowerCase()
-    );
-    if (!recipient) {
-      throw new Error(tr("برای این کیف پول سهمیه‌ای در فهرست وجود ندارد.", "This wallet is not in the airdrop list."));
+    if (!proofResponse.ok || !proofData) {
+      throw new Error(proofData?.error || "The API could not verify this wallet.");
     }
 
+    if (
+      proofData.network !== "polygon-amoy" ||
+      String(proofData.chainId) !== "80002" ||
+      typeof proofData.tokenAddress !== "string" ||
+      proofData.tokenAddress.toLowerCase() !== HLT_TOKEN_ADDRESS.toLowerCase() ||
+      typeof proofData.airdropAddress !== "string" ||
+      proofData.airdropAddress.toLowerCase() !== HLT_AIRDROP_ADDRESS.toLowerCase() ||
+      typeof proofData.merkleRoot !== "string" ||
+      proofData.merkleRoot.toLowerCase() !== HLT_MERKLE_ROOT.toLowerCase() ||
+      typeof proofData.address !== "string" ||
+      proofData.address.toLowerCase() !== account.toLowerCase() ||
+      typeof proofData.amount !== "string" ||
+      !/^\d+$/.test(proofData.amount) ||
+      !Array.isArray(proofData.proof) ||
+      !proofData.proof.every(item =>
+        typeof item === "string" && /^0x[0-9a-fA-F]{64}$/.test(item)
+      )
+    ) {
+      throw new Error(tr(
+        "پاسخ API با شبکه، قرارداد یا کیف پول فعال مطابقت ندارد.",
+        "The API response does not match the network, contract, or active wallet."
+      ));
+    }
+
+    const recipient = {
+      address: proofData.address,
+      amount: proofData.amount,
+      proof: proofData.proof
+    };
     const amount = BigInt(recipient.amount);
-    if (amount <= 0n || !Array.isArray(recipient.proof)) {
-      throw new Error(tr("مبلغ یا اثبات نامعتبر است.", "Invalid allocation or proof."));
+    if (amount <= 0n) {
+      throw new Error(tr("مبلغ ایردراپ نامعتبر است.", "Invalid airdrop allocation."));
     }
 
     const paddedAccount = account.toLowerCase().replace(/^0x/, "").padStart(64, "0");
