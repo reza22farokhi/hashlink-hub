@@ -1,0 +1,73 @@
+name: Verify Airdrop KV Content
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare KV data with repository source
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: "65a43ddb4f9c48e98495d2fe4cae0427"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$CF_API_TOKEN" || -z "$CF_ACCOUNT_ID" ]]; then
+            echo "FAIL: Cloudflare secrets are missing."
+            exit 1
+          fi
+
+          tmp="$(mktemp)"
+          trap 'rm -f "$tmp"' EXIT
+
+          code="$(curl -sS \
+            -o "$tmp" \
+            -w '%{http_code}' \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}/values/airdrop-data" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H 'Accept: application/json')"
+
+          echo "Cloudflare KV value HTTP status: $code"
+
+          if [[ "$code" != "200" ]]; then
+            echo "FAIL: Could not read KV value. Response withheld."
+            exit 1
+          fi
+
+          if ! jq -e '
+            (.merkleRoot | type == "string") and
+            (.recipients | type == "array")
+          ' "$tmp" >/dev/null; then
+            echo "FAIL: KV value does not have the expected JSON structure."
+            exit 1
+          fi
+
+          if ! jq -e '
+            (.merkleRoot | type == "string") and
+            (.recipients | type == "array")
+          ' website/airdrop-proofs.json >/dev/null; then
+            echo "FAIL: Repository source has an unexpected JSON structure."
+            exit 1
+          fi
+
+          if ! diff -q \
+            <(jq -cS '{merkleRoot, recipients}' website/airdrop-proofs.json) \
+            <(jq -cS '{merkleRoot, recipients}' "$tmp") >/dev/null; then
+            echo "FAIL: KV content differs from repository source."
+            echo "No wallet addresses or proof data were printed."
+            exit 1
+          fi
+
+          echo "PASS: KV data exactly matches the repository's root and recipients."
+          jq -r '"Merkle root: " + .merkleRoot' website/airdrop-proofs.json
+          jq -r '"Recipient count: " + (.recipients | length | tostring)' website/airdrop-proofs.json
