@@ -1,0 +1,48 @@
+name: HashLink Airdrop API Security Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "workers/airdrop-api/**"
+      - ".github/workflows/test-airdrop-api.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "workers/airdrop-api/**"
+      - ".github/workflows/test-airdrop-api.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hashlink-airdrop-api-tests
+  cancel-in-progress: false
+
+jobs:
+  api-security-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: workers/airdrop-api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install API dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Check Worker syntax
+        run: npm run check
+
+      - name: Run API security tests
+        run: node test/security.test.mjs
