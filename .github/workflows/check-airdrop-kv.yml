@@ -1,0 +1,61 @@
+name: Check Airdrop KV
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-kv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check airdrop-data key existence
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: "65a43ddb4f9c48e98495d2fe4cae0427"
+        run: |
+          set -eu
+
+          if [ -z "$CF_API_TOKEN" ]; then
+            echo "RESULT: CLOUDFLARE_API_TOKEN secret is missing or empty."
+            exit 1
+          fi
+
+          if [ -z "$CF_ACCOUNT_ID" ]; then
+            echo "RESULT: CLOUDFLARE_ACCOUNT_ID secret is missing or empty."
+            exit 1
+          fi
+
+          HTTP_CODE=$(curl -sS \
+            -o /tmp/kv-response.json \
+            -w '%{http_code}' \
+            --get \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}/keys" \
+            --data-urlencode 'prefix=airdrop-data' \
+            --data-urlencode 'limit=1000' \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H 'Accept: application/json')
+
+          echo "Cloudflare API HTTP status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "RESULT: KV lookup failed; response body withheld."
+            exit 1
+          fi
+
+          if ! jq -e '.success == true' /tmp/kv-response.json >/dev/null; then
+            echo "RESULT: Cloudflare API did not report success; details withheld."
+            exit 1
+          fi
+
+          if jq -e '[.result[]? | select(.name == "airdrop-data")] | length > 0' \
+            /tmp/kv-response.json >/dev/null; then
+            echo "RESULT: airdrop-data EXISTS."
+          else
+            echo "RESULT: airdrop-data NOT FOUND."
+          fi
+
+          rm -f /tmp/kv-response.json
