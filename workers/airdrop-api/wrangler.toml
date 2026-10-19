@@ -1,6 +1,6 @@
 name = "hashlink-airdrop-api"
 main = "src/index.js"
-compatibility_date = "2026-10-19"
+compatibility_date = "2026-10-18"
 
 [[kv_namespaces]]
 binding = "AIRDROP_KV"
