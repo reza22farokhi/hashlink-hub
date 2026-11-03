@@ -23,3 +23,7 @@ airdrop-proofs.json
 *.backup
 *.backup-*
 *.bak
+
+# Extended local backup exclusions
+*.bak.*
+backup-before-claim-*/

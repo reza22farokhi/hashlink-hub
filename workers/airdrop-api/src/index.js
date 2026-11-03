@@ -30,11 +30,66 @@ function response(data, status = 200) {
 }
 
 async function readBody(request) {
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).length > MAX_BODY) {
+  // Content-Length is only an early-rejection hint, never the sole limit.
+  const contentLength = request.headers.get("content-length");
+
+  if (contentLength !== null &&
+      /^\d+$/.test(contentLength) &&
+      Number(contentLength) > MAX_BODY) {
     throw new Error("body_too_large");
   }
-  return JSON.parse(raw);
+
+  if (!request.body) {
+    throw new Error("invalid_json");
+  }
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+  let completed = false;
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) {
+        completed = true;
+        break;
+      }
+
+      totalBytes += value.byteLength;
+
+      if (totalBytes > MAX_BODY) {
+        try {
+          await reader.cancel("body_too_large");
+        } catch {
+          // Preserve the original size-limit error.
+        }
+        throw new Error("body_too_large");
+      }
+
+      chunks.push(value);
+    }
+
+    const bytes = new Uint8Array(totalBytes);
+    let offset = 0;
+
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    const raw = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return JSON.parse(raw);
+  } finally {
+    if (!completed) {
+      try {
+        reader.releaseLock();
+      } catch {
+        // The stream may already have released its reader.
+      }
+    }
+  }
 }
 
 function validHash(value) {
@@ -182,7 +237,12 @@ async function proof(request, env) {
     return response({ error: "signature_address_mismatch" }, 401);
   }
 
-  const data = await env.AIRDROP_KV.get("airdrop-data", "json");
+  let data;
+  try {
+    data = await env.AIRDROP_KV.get("airdrop-data", "json");
+  } catch {
+    return response({ error: "airdrop_data_unavailable" }, 503);
+  }
 
   if (!data || !Array.isArray(data.recipients)) {
     return response({ error: "airdrop_data_not_configured" }, 503);
@@ -226,16 +286,31 @@ async function proof(request, env) {
 }
 
 
+class ChallengeStoreUnavailableError extends Error {
+  constructor() {
+    super("challenge_store_unavailable");
+    this.name = "ChallengeStoreUnavailableError";
+  }
+}
+
 async function doCall(env, key, payload) {
-  const id = env.AIRDROP_CHALLENGES.idFromName(key);
-  const stub = env.AIRDROP_CHALLENGES.get(id);
-  const result = await stub.fetch("https://internal.invalid/", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  if (!result.ok) throw new Error("challenge_store_unavailable");
-  return result.json();
+  try {
+    const id = env.AIRDROP_CHALLENGES.idFromName(key);
+    const stub = env.AIRDROP_CHALLENGES.get(id);
+    const result = await stub.fetch("https://internal.invalid/", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!result.ok) {
+      throw new ChallengeStoreUnavailableError();
+    }
+
+    return await result.json();
+  } catch {
+    throw new ChallengeStoreUnavailableError();
+  }
 }
 
 export class ChallengeStore {
@@ -292,18 +367,33 @@ export class ChallengeStore {
         return Response.json({ error: "invalid_challenge" }, { status: 400 });
       }
 
+      const createdAt = Date.now();
+      const expiresAt = createdAt + TTL * 1000;
+
       await this.ctx.storage.put("challenge", {
         address: body.value.address,
         message: body.value.message,
-        createdAt: Date.now()
+        createdAt,
+        expiresAt
       });
+
+      // Cloudflare Durable Object storage supports persistent alarms.
+      await this.ctx.storage.setAlarm?.(expiresAt);
+
       return Response.json({ ok: true });
     }
 
     if (body.action === "get") {
       const saved = await this.ctx.storage.get("challenge");
 
-      if (!saved || Date.now() - saved.createdAt > 300000) {
+      if (!saved) {
+        return Response.json({ value: null });
+      }
+
+      const expiresAt = saved.expiresAt ?? saved.createdAt + TTL * 1000;
+
+      if (Date.now() >= expiresAt) {
+        await this.ctx.storage.delete("challenge");
         return Response.json({ value: null });
       }
 
@@ -318,7 +408,9 @@ export class ChallengeStore {
 
         if (!saved) return { ok: false };
 
-        if (Date.now() - saved.createdAt > 300000 ||
+        const expiresAt = saved.expiresAt ?? saved.createdAt + TTL * 1000;
+
+        if (Date.now() >= expiresAt ||
             saved.address !== body.address) {
           await txn.delete("challenge");
           return { ok: false };
@@ -332,6 +424,22 @@ export class ChallengeStore {
     }
 
     return Response.json({ error: "unknown_action" }, { status: 400 });
+  }
+
+  async alarm() {
+    const saved = await this.ctx.storage.get("challenge");
+
+    if (!saved) return;
+
+    const expiresAt = saved.expiresAt ?? saved.createdAt + TTL * 1000;
+
+    if (Date.now() >= expiresAt) {
+      await this.ctx.storage.delete("challenge");
+      return;
+    }
+
+    // Defensive rescheduling if the alarm fires before expiration.
+    await this.ctx.storage.setAlarm?.(expiresAt);
   }
 }
 
@@ -368,7 +476,10 @@ export default {
         return await proof(request, env);
       }
       return response({ error: "not_found" }, 404);
-    } catch {
+    } catch (error) {
+      if (error instanceof ChallengeStoreUnavailableError) {
+        return response({ error: "challenge_store_unavailable" }, 503);
+      }
       return response({ error: "internal_error" }, 500);
     }
   }
