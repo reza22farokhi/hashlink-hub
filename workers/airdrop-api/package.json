@@ -5,7 +5,8 @@
   "scripts": {
     "check": "node --check src/index.js",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "node --check src/index.js && node test/consume-storage-error.test.mjs && node test/durable-object-errors.test.mjs && node test/kv-error.test.mjs && node test/public-api.test.mjs && node test/security.test.mjs && node test/body-limit.test.mjs && node test/challenge-alarm.test.mjs"
   },
   "dependencies": {
     "viem": "^2.38.5"

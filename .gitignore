@@ -23,3 +23,14 @@ airdrop-proofs.json
 *.backup
 *.backup-*
 *.bak
+
+# Extended local backup exclusions
+*.bak.*
+backup-before-claim-*/
+
+# local artifacts (never commit)
+==="
+HashLinkToken.flattened.sol
+HashLinkToken.verified.sol
+verify-airdrop-standard-input.json
+verify-standard-input.json
